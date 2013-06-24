@@ -14,8 +14,11 @@ public class GameManagerStuff : MonoBehaviour
         // User created event with link transfer message
         PurpleNetwork.AddListener ("LinkTransfer", link_transfer_callback);
 
-        // User created event with no arguments
+        // User created event with no arguments and a second listener
         PurpleNetwork.AddListener ("Ping", ping_callback);
+        PurpleNetwork.AddListener ("Ping", ping_two_callback);
+
+        // TODO listen only on server for 'request game state' which will be in charge of sending commands directly  to one player
     }
 
     void Update ()
@@ -28,6 +31,9 @@ public class GameManagerStuff : MonoBehaviour
             object link_transfer_message = new LinkTransferMessage();
             PurpleNetwork.Broadcast ("LinkTransfer", link_transfer_message);
         }
+
+        // TODO example creating object.. getting id, and it going out to everyone
+        // since this will have to happen for all clients on join to keep ids in sync
     }
 
 
@@ -49,6 +55,11 @@ public class GameManagerStuff : MonoBehaviour
     void ping_callback()
     {
         Debug.Log ("ping callback!");
+    }
+
+    void ping_two_callback()
+    {
+        Debug.Log ("the other ping callback!");
     }
 }
 
