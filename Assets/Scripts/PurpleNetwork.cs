@@ -7,7 +7,7 @@ public class PurpleNetwork : MonoBehaviour
     public int    port_number       = 25000;
     public string password          = "a password";
 
-    private ArrayList event_listeners;
+    private ArrayList event_listeners; // TODO change to dictionary of arrays per thing
 
 
     // SINGLETON /////////////////////////
@@ -60,6 +60,23 @@ public class PurpleNetwork : MonoBehaviour
     }
 
 
+    private void broadcast (string event_name, object message)
+    {
+      Debug.Log ("BROADCAST " + event_name);
+
+      // or is it specific rpc names here
+      network_view.RPC("receive_broadcast", RPCMode.All); // TODO fix target
+    }
+
+
+    [RPC]
+    void receive_broadcast(NetworkMessageInfo info)
+    {
+      Debug.Log ("RECEIVED BROADCAST!");
+      // TODO fire to all listeners for message
+    }
+
+
 
     // SINGLETON STATIC //////////////////
     //
@@ -72,6 +89,7 @@ public class PurpleNetwork : MonoBehaviour
 
     public static void Broadcast (string event_name, object message)
     {
+        Instance.broadcast (event_name, message);
     }
 
     // TODO Server Listeners

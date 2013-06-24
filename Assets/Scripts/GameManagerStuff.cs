@@ -25,12 +25,12 @@ public class GameManagerStuff : MonoBehaviour
     {
         // Lets send a game event.
         //
-        if (Input.GetButtonDown("Fire1"))
+        if (Input.GetButtonDown("Fire2"))
         {
-
             object link_transfer_message = new LinkTransferMessage();
             PurpleNetwork.Broadcast ("LinkTransfer", link_transfer_message);
         }
+
 
         // TODO example creating object.. getting id, and it going out to everyone
         // since this will have to happen for all clients on join to keep ids in sync
