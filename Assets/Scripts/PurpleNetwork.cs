@@ -12,10 +12,18 @@ public class PurpleNetwork : MonoBehaviour
 
 
     void Start () {
-      instance = this;
+        instance = this;
+    }
 
-      //launch_server();
-      connect_to("127.0.0.1");
+
+
+    // DEBUG GUI /////////////////////////
+    //
+    void OnGUI () {
+        if (GUILayout.Button ("Host"   )) { launch_server ();         }
+        if (GUILayout.Button ("Connect")) { connect_to ("127.0.0.1"); }
+        if (Network.isClient) { GUILayout.Label ("Connected as Client."); };
+        if (Network.isServer) { GUILayout.Label ("Hosting as Server.");   };
     }
 
 
@@ -55,6 +63,7 @@ public class PurpleNetwork : MonoBehaviour
         view_id = Network.AllocateViewID();
         Debug.Log ("View ID2: " + view_id);
     }
+
 
 
     // SERVER EVENTS
