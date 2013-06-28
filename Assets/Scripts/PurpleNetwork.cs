@@ -6,12 +6,14 @@ public class PurpleNetwork : MonoBehaviour
     public int    number_of_players = 32;
     public int    port_number       = 25000;
     public string password          = "a password";
+    public NetworkViewID last_view_id;
 
     private ArrayList event_listeners; // TODO change to dictionary of arrays per thing
 
 
 
-    void Start () {
+    void Start ()
+    {
         instance = this;
     }
 
@@ -19,11 +21,16 @@ public class PurpleNetwork : MonoBehaviour
 
     // DEBUG GUI /////////////////////////
     //
-    void OnGUI () {
+    void OnGUI ()
+    {
         if (GUILayout.Button ("Host"   )) { launch_server ();         }
         if (GUILayout.Button ("Connect")) { connect_to ("127.0.0.1"); }
         if (Network.isClient) { GUILayout.Label ("Connected as Client."); };
         if (Network.isServer) { GUILayout.Label ("Hosting as Server.");   };
+
+        if (GUILayout.Button ("New ID")) { last_view_id = Network.AllocateViewID (); }
+
+        GUILayout.Label ("View: " + last_view_id.ToString() );
     }
 
 
@@ -56,12 +63,6 @@ public class PurpleNetwork : MonoBehaviour
         Network.incomingPassword = password;
         bool use_nat = !Network.HavePublicAddress();
         Network.InitializeServer (number_of_players, port_number, use_nat);
-
-        NetworkViewID view_id = Network.AllocateViewID();
-        Debug.Log ("View ID1: " + view_id);
-
-        view_id = Network.AllocateViewID();
-        Debug.Log ("View ID2: " + view_id);
     }
 
 
@@ -76,15 +77,10 @@ public class PurpleNetwork : MonoBehaviour
 
 
     // CLIENT EVENTS
-    public void connect_to(string server_host) {
+    public void connect_to(string server_host)
+    {
         Network.Connect(server_host, port_number, password);
         Debug.Log ("Connecting to Server");
-
-        NetworkViewID view_id = Network.AllocateViewID();
-        Debug.Log ("View ID1: " + view_id);
-
-        view_id = Network.AllocateViewID();
-        Debug.Log ("View ID2: " + view_id);
     }
 
 
