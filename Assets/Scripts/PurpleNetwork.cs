@@ -15,6 +15,8 @@ public class PurpleNetwork : MonoBehaviour
     // TODO Direct Responders
     // TODO broadcast player connects and disconnects to others so they may request info.
     // TODO send directly to server
+    //
+    // FIXME probably reduce to one listen/broadcast (vs server special) and just have if conditions in game manager that chose to listen or broadcast based on hosting/client
 
 
     void Start ()
@@ -103,6 +105,7 @@ public class PurpleNetwork : MonoBehaviour
     }
 
 
+    // SEND
     private void broadcast (string event_name, object message)
     {
       Debug.Log ("BROADCAST " + event_name);
@@ -117,6 +120,8 @@ public class PurpleNetwork : MonoBehaviour
       network_view.RPC("receive_event", RPCMode.Server, event_name, JsonMapper.ToJson(message));
     }
 
+
+    // RECEIVE
     [RPC]
     void receive_broadcast(string event_name, string json_message, NetworkMessageInfo info)
     {
