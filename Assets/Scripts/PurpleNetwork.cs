@@ -10,6 +10,16 @@ public class PurpleNetwork : MonoBehaviour
     private ArrayList event_listeners; // TODO change to dictionary of arrays per thing
 
 
+
+    void Start () {
+      instance = this;
+
+      //launch_server();
+      connect_to("127.0.0.1");
+    }
+
+
+
     // SINGLETON /////////////////////////
     //
     private static NetworkView network_view;
@@ -38,14 +48,41 @@ public class PurpleNetwork : MonoBehaviour
         Network.incomingPassword = password;
         bool use_nat = !Network.HavePublicAddress();
         Network.InitializeServer (number_of_players, port_number, use_nat);
+
+        NetworkViewID view_id = Network.AllocateViewID();
+        Debug.Log ("View ID1: " + view_id);
+
+        view_id = Network.AllocateViewID();
+        Debug.Log ("View ID2: " + view_id);
     }
 
 
-    void Start () {
-      instance = this;
+    // SERVER EVENTS
+    void OnServerInitialized()  { Debug.Log ("Server Initialized."); }
 
-      launch_server();
+    void OnPlayerDisconnected() { Debug.Log ("Player Disconnected"); }
+
+    void OnPlayerConnected()    { Debug.Log ("Player Connected");    }
+
+
+
+    // CLIENT EVENTS
+    public void connect_to(string server_host) {
+        Network.Connect(server_host, port_number, password);
+        Debug.Log ("Connecting to Server");
+
+        NetworkViewID view_id = Network.AllocateViewID();
+        Debug.Log ("View ID1: " + view_id);
+
+        view_id = Network.AllocateViewID();
+        Debug.Log ("View ID2: " + view_id);
     }
+
+
+    void OnConnectedToServer()      { Debug.Log ("Connected to server");      }
+
+    void OnDisconnectedFromServer() { Debug.Log ("Disconnected from server"); }
+
 
 
     // TODO broadcast player connects and disconnects to others so they may request info.
@@ -64,15 +101,14 @@ public class PurpleNetwork : MonoBehaviour
     {
       Debug.Log ("BROADCAST " + event_name);
 
-      // or is it specific rpc names here
-      network_view.RPC("receive_broadcast", RPCMode.All); // TODO fix target
+      network_view.RPC("receive_broadcast", RPCMode.All, event_name); // TODO fix target
     }
 
 
     [RPC]
-    void receive_broadcast(NetworkMessageInfo info)
+    void receive_broadcast(string event_name, NetworkMessageInfo info)
     {
-      Debug.Log ("RECEIVED BROADCAST!");
+      Debug.Log ("RECEIVED BROADCAST! " + event_name);
       // TODO fire to all listeners for message
     }
 
