@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using LitJson;
 
 public class PurpleNetwork : MonoBehaviour
 {
@@ -10,6 +11,10 @@ public class PurpleNetwork : MonoBehaviour
 
     private ArrayList event_listeners; // TODO change to dictionary of arrays per thing
 
+    // TODO Server Listeners? (or just if(server))
+    // TODO Direct Responders
+    // TODO broadcast player connects and disconnects to others so they may request info.
+    // TODO send directly to server
 
 
     void Start ()
@@ -66,17 +71,15 @@ public class PurpleNetwork : MonoBehaviour
     }
 
 
-
     // SERVER EVENTS
     void OnServerInitialized()  { Debug.Log ("Server Initialized."); }
-
     void OnPlayerDisconnected() { Debug.Log ("Player Disconnected"); }
-
     void OnPlayerConnected()    { Debug.Log ("Player Connected");    }
 
 
 
-    // CLIENT EVENTS
+    // CLIENT ////////////////////////////
+    //
     public void connect_to(string server_host)
     {
         Network.Connect(server_host, port_number, password);
@@ -84,21 +87,19 @@ public class PurpleNetwork : MonoBehaviour
     }
 
 
+    // CLIENT EVENTS
     void OnConnectedToServer()      { Debug.Log ("Connected to server");      }
-
     void OnDisconnectedFromServer() { Debug.Log ("Disconnected from server"); }
 
 
 
-    // TODO broadcast player connects and disconnects to others so they may request info.
-    // TODO ID dispatcher
-
-
-    // INSTANCE METHODS
+    // EVENT DISPATCH ////////////////////
     //
     private void add_listener (string event_name, PurpleNetCallback listener)
     {
       Debug.Log ("ADD LISTENER " + event_name);
+
+      // TODO add to array here
     }
 
 
@@ -106,20 +107,33 @@ public class PurpleNetwork : MonoBehaviour
     {
       Debug.Log ("BROADCAST " + event_name);
 
-      network_view.RPC("receive_broadcast", RPCMode.All, event_name); // TODO fix target
+      network_view.RPC("receive_broadcast", RPCMode.All, event_name, JsonMapper.ToJson(message));
     }
 
+    private void server_event (string event_name, object message)
+    {
+      Debug.Log ("SERVER EVENT " + event_name);
+
+      network_view.RPC("receive_event", RPCMode.Server, event_name, JsonMapper.ToJson(message));
+    }
 
     [RPC]
-    void receive_broadcast(string event_name, NetworkMessageInfo info)
+    void receive_broadcast(string event_name, string json_message, NetworkMessageInfo info)
     {
-      Debug.Log ("RECEIVED BROADCAST! " + event_name);
+      Debug.Log ("RECEIVED BROADCAST: " + event_name + " -- " + json_message);
       // TODO fire to all listeners for message
     }
 
+    [RPC]
+    void receive_event(string event_name, string json_message, NetworkMessageInfo info)
+    {
+      Debug.Log ("RECEIVED EVENT: " + event_name + " -- " + json_message);
+      // TODO rebroadcast after checking some logic? or.. fire server listeners
+    }
 
 
-    // SINGLETON STATIC //////////////////
+
+    // SINGLETON STATIC METHODS ///////////
     //
     public static void AddListener (string event_name, PurpleNetCallback listener)
     {
@@ -132,9 +146,6 @@ public class PurpleNetwork : MonoBehaviour
     {
         Instance.broadcast (event_name, message);
     }
-
-    // TODO Server Listeners
-    // TODO Direct Responders
 
 }
 

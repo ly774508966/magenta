@@ -3,6 +3,10 @@ using System.Collections;
 
 public class GameManagerStuff : MonoBehaviour
 {
+    // TODO example creating object.. getting id, and it going out to everyone
+    // since this will have to happen for all clients on join to keep ids in sync
+    // and send all objects to a new player. and track players on server
+
     void Start ()
     {
         // Lets register with the network to handle game events.
@@ -21,19 +25,21 @@ public class GameManagerStuff : MonoBehaviour
         // TODO listen only on server for 'request game state' which will be in charge of sending commands directly  to one player
     }
 
+
     void Update ()
     {
         // Lets send a game event.
         //
         if (Input.GetButtonDown("Fire2"))
         {
-            object link_transfer_message = new LinkTransferMessage();
+            LinkTransferMessage link_transfer_message = new LinkTransferMessage();
+
+            link_transfer_message.first_id  = 25;
+            link_transfer_message.second_id = 32;
+            link_transfer_message.link_type = "superduper";
+
             PurpleNetwork.Broadcast ("LinkTransfer", link_transfer_message);
         }
-
-
-        // TODO example creating object.. getting id, and it going out to everyone
-        // since this will have to happen for all clients on join to keep ids in sync
     }
 
 
