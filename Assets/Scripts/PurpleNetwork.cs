@@ -125,7 +125,7 @@ public class PurpleNetwork : MonoBehaviour
         }
         else
         {
-          network_view.RPC("receive_broadcast", RPCMode.All, event_name, JsonMapper.ToJson(message));
+          network_view.RPC("receive_broadcast_with_arg", RPCMode.All, event_name, JsonMapper.ToJson(message));
         };
     }
 
@@ -133,7 +133,7 @@ public class PurpleNetwork : MonoBehaviour
 
     // RECEIVE
     [RPC]
-    void receive_broadcast(string event_name, string json_message, NetworkMessageInfo info)
+    void receive_broadcast_with_arg(string event_name, string json_message, NetworkMessageInfo info)
     {
         // TODO use <T> to induce object its coming back as instead of making function use the mapper?
         event_listeners[event_name]();//message);
