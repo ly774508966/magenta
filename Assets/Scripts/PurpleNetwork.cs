@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using LitJson;
 
 public class PurpleNetwork : MonoBehaviour
@@ -9,7 +10,7 @@ public class PurpleNetwork : MonoBehaviour
     public string password          = "a password";
     public NetworkViewID last_view_id;
 
-    private ArrayList event_listeners; // TODO change to dictionary of arrays per thing
+    private Dictionary<string, PurpleNetCallback> event_listeners = new Dictionary<string, PurpleNetCallback>();
 
     // TODO Server Listeners? (or just if(server))
     // TODO Direct Responders
@@ -99,41 +100,60 @@ public class PurpleNetwork : MonoBehaviour
     //
     private void add_listener (string event_name, PurpleNetCallback listener)
     {
-      Debug.Log ("ADD LISTENER " + event_name);
+        Debug.Log ("ADD LISTENER " + event_name);
 
-      // TODO add to array here
+        if (!event_listeners.ContainsKey (event_name))
+        {
+          event_listeners.Add(event_name, null);
+        }
+
+        // delegates can be chained using addition
+        event_listeners[event_name] += listener;
+    }
+
+    private void add_listener<T>(string event_name, PurpleNetCallback<T> listener)
+    {
+        Debug.Log ("ADD LISTENER " + event_name);
+
+        if (!event_listeners.ContainsKey (event_name))
+        {
+          event_listeners.Add(event_name, null);
+        }
+
+        // delegates can be chained using addition
+        event_listeners[event_name] += (PurpleNetCallback<T>) listener;
     }
 
 
     // SEND
-    private void broadcast (string event_name, object message)
+    private void broadcast (string event_name, object message = null)
     {
-      Debug.Log ("BROADCAST " + event_name);
+        Debug.Log ("BROADCAST " + event_name);
 
-      network_view.RPC("receive_broadcast", RPCMode.All, event_name, JsonMapper.ToJson(message));
+        if (message == null) // FIXME ugly, just write two signatures and two rpcs? else rpc has an if == ""
+        {
+          network_view.RPC("receive_broadcast", RPCMode.All, event_name);
+        }
+        else
+        {
+          network_view.RPC("receive_broadcast", RPCMode.All, event_name, JsonMapper.ToJson(message));
+        };
     }
 
-    private void server_event (string event_name, object message)
-    {
-      Debug.Log ("SERVER EVENT " + event_name);
-
-      network_view.RPC("receive_event", RPCMode.Server, event_name, JsonMapper.ToJson(message));
-    }
 
 
     // RECEIVE
     [RPC]
     void receive_broadcast(string event_name, string json_message, NetworkMessageInfo info)
     {
-      Debug.Log ("RECEIVED BROADCAST: " + event_name + " -- " + json_message);
-      // TODO fire to all listeners for message
+        // TODO use <T> to induce object its coming back as instead of making function use the mapper?
+        event_listeners[event_name](json_message);
     }
 
     [RPC]
-    void receive_event(string event_name, string json_message, NetworkMessageInfo info)
+    void receive_broadcast(string event_name, NetworkMessageInfo info)
     {
-      Debug.Log ("RECEIVED EVENT: " + event_name + " -- " + json_message);
-      // TODO rebroadcast after checking some logic? or.. fire server listeners
+        event_listeners[event_name]();
     }
 
 
@@ -142,12 +162,16 @@ public class PurpleNetwork : MonoBehaviour
     //
     public static void AddListener (string event_name, PurpleNetCallback listener)
     {
-        //Instance.listeners.Add (listener);
+        Instance.add_listener (event_name, listener);
+    }
+
+    public static void AddListener<T> (string event_name, PurpleNetCallback<T> listener)
+    {
         Instance.add_listener (event_name, listener);
     }
 
 
-    public static void Broadcast (string event_name, object message)
+    public static void Broadcast (string event_name, object message = null)
     {
         Instance.broadcast (event_name, message);
     }

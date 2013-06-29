@@ -1,11 +1,14 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
+
 
 public class GameManagerStuff : MonoBehaviour
 {
     // TODO example creating object.. getting id, and it going out to everyone
     // since this will have to happen for all clients on join to keep ids in sync
     // and send all objects to a new player. and track players on server
+    // a player can modify own objects only.
 
     void Start ()
     {
@@ -16,7 +19,7 @@ public class GameManagerStuff : MonoBehaviour
         PurpleNetwork.AddListener ("AddPlayer",    add_player_callback);
 
         // User created event with link transfer message
-        PurpleNetwork.AddListener ("LinkTransfer", link_transfer_callback);
+        PurpleNetwork.AddListener<string> ("LinkTransfer", link_transfer_callback);
 
         // User created event with no arguments and a second listener
         PurpleNetwork.AddListener ("Ping", ping_callback);
@@ -24,6 +27,7 @@ public class GameManagerStuff : MonoBehaviour
 
         // TODO listen only on server for 'request game state' which will be in charge of sending commands directly  to one player
     }
+
 
 
     void Update ()
@@ -40,6 +44,11 @@ public class GameManagerStuff : MonoBehaviour
 
             PurpleNetwork.Broadcast ("LinkTransfer", link_transfer_message);
         }
+
+        if (Input.GetButtonDown("Fire3"))
+        {
+            PurpleNetwork.Broadcast ("Ping");
+        }
     }
 
 
@@ -52,9 +61,9 @@ public class GameManagerStuff : MonoBehaviour
     }
 
 
-    void link_transfer_callback()
+    void link_transfer_callback(string json_message) // TODO GET JSON
     {
-        Debug.Log ("link transfer callback!");
+        Debug.Log ("link transfer callback! ::: "+ json_message);
     }
 
 
