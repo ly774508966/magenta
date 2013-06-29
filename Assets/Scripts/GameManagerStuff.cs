@@ -47,7 +47,7 @@ public class GameManagerStuff : MonoBehaviour
 
         if (Input.GetButtonDown("Fire3"))
         {
-            PurpleNetwork.Broadcast ("Ping");
+            PurpleNetwork.Broadcast ("Ping", new EmptyMessage());
         }
     }
 
@@ -55,24 +55,24 @@ public class GameManagerStuff : MonoBehaviour
     // Game specific methods
     //
 
-    void add_player_callback() // FIXME player message argument next
+    void add_player_callback(string json_message) // FIXME player message argument next
     {
         Debug.Log ("player callback!");
     }
 
 
-    void link_transfer_callback() // TODO GET JSON
+    void link_transfer_callback(string json_message) // TODO GET JSON
     {
-        Debug.Log ("link transfer callback! ::: ");//+ json_message);
+        Debug.Log ("link transfer callback! ::: "+ json_message);
     }
 
 
-    void ping_callback()
+    void ping_callback(string json_message)
     {
         Debug.Log ("ping callback!");
     }
 
-    void ping_two_callback()
+    void ping_two_callback(string json_message)
     {
         Debug.Log ("the other ping callback!");
     }
@@ -88,4 +88,9 @@ public class LinkTransferMessage
     public int    first_id;
     public int    second_id;
     public string link_type;
+}
+
+
+public class EmptyMessage
+{
 }

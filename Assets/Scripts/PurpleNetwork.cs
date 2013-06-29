@@ -115,34 +115,21 @@ public class PurpleNetwork : MonoBehaviour
 
 
     // SEND
-    private void broadcast (string event_name, object message = null)
+    private void broadcast (string event_name, object message)
     {
         Debug.Log ("BROADCAST " + event_name);
 
-        if (message == null) // FIXME ugly, just write two signatures and two rpcs? else rpc has an if == ""
-        {
-          network_view.RPC("receive_broadcast", RPCMode.All, event_name);
-        }
-        else
-        {
-          network_view.RPC("receive_broadcast_with_arg", RPCMode.All, event_name, JsonMapper.ToJson(message));
-        };
+        network_view.RPC("receive_broadcast", RPCMode.All, event_name, JsonMapper.ToJson(message));
     }
 
 
 
     // RECEIVE
     [RPC]
-    void receive_broadcast_with_arg(string event_name, string json_message, NetworkMessageInfo info)
+    void receive_broadcast(string event_name, string json_message, NetworkMessageInfo info)
     {
         // TODO use <T> to induce object its coming back as instead of making function use the mapper?
-        event_listeners[event_name]();//message);
-    }
-
-    [RPC]
-    void receive_broadcast(string event_name, NetworkMessageInfo info)
-    {
-        event_listeners[event_name]();
+        event_listeners[event_name](json_message);
     }
 
 
@@ -155,7 +142,7 @@ public class PurpleNetwork : MonoBehaviour
     }
 
 
-    public static void Broadcast (string event_name, object message = null)
+    public static void Broadcast (string event_name, object message)
     {
         Instance.broadcast (event_name, message);
     }
@@ -166,5 +153,5 @@ public class PurpleNetwork : MonoBehaviour
 
 // DELEGATES FOR CALLBACK
 
-public delegate void PurpleNetCallback();          // Without message
-public delegate void PurpleNetCallback<T>(T arg1); // With message
+public delegate void PurpleNetCallback(string json_message); // Without message
+// public delegate void PurpleNetCallback<T>(T arg1); // With message
