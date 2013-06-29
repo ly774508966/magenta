@@ -79,10 +79,9 @@ public class GameManagerStuff : MonoBehaviour
 }
 
 
+
 // GAME NETWORK MESSAGES
 //
-
-[System.Serializable]
 public class LinkTransferMessage
 {
     public int    first_id;
