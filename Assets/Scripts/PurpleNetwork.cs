@@ -19,6 +19,8 @@ public class PurpleNetwork : MonoBehaviour
     //
     // FIXME probably reduce to one listen/broadcast (vs server special) and just have if conditions in game manager that chose to listen or broadcast based on hosting/client
 
+    // LEFT AT: figuring out how to subscribe to both kinds of messages (with/without args)
+    // adding realistic connect/add/reconnect/etc
 
     void Start ()
     {
@@ -111,19 +113,6 @@ public class PurpleNetwork : MonoBehaviour
         event_listeners[event_name] += listener;
     }
 
-    private void add_listener<T>(string event_name, PurpleNetCallback<T> listener)
-    {
-        Debug.Log ("ADD LISTENER " + event_name);
-
-        if (!event_listeners.ContainsKey (event_name))
-        {
-          event_listeners.Add(event_name, null);
-        }
-
-        // delegates can be chained using addition
-        event_listeners[event_name] += (PurpleNetCallback<T>) listener;
-    }
-
 
     // SEND
     private void broadcast (string event_name, object message = null)
@@ -147,7 +136,7 @@ public class PurpleNetwork : MonoBehaviour
     void receive_broadcast(string event_name, string json_message, NetworkMessageInfo info)
     {
         // TODO use <T> to induce object its coming back as instead of making function use the mapper?
-        event_listeners[event_name](json_message);
+        event_listeners[event_name]();//message);
     }
 
     [RPC]
@@ -161,11 +150,6 @@ public class PurpleNetwork : MonoBehaviour
     // SINGLETON STATIC METHODS ///////////
     //
     public static void AddListener (string event_name, PurpleNetCallback listener)
-    {
-        Instance.add_listener (event_name, listener);
-    }
-
-    public static void AddListener<T> (string event_name, PurpleNetCallback<T> listener)
     {
         Instance.add_listener (event_name, listener);
     }

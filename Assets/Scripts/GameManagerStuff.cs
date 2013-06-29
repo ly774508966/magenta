@@ -19,7 +19,7 @@ public class GameManagerStuff : MonoBehaviour
         PurpleNetwork.AddListener ("AddPlayer",    add_player_callback);
 
         // User created event with link transfer message
-        PurpleNetwork.AddListener<string> ("LinkTransfer", link_transfer_callback);
+        PurpleNetwork.AddListener ("LinkTransfer", link_transfer_callback);
 
         // User created event with no arguments and a second listener
         PurpleNetwork.AddListener ("Ping", ping_callback);
@@ -61,9 +61,9 @@ public class GameManagerStuff : MonoBehaviour
     }
 
 
-    void link_transfer_callback(string json_message) // TODO GET JSON
+    void link_transfer_callback() // TODO GET JSON
     {
-        Debug.Log ("link transfer callback! ::: "+ json_message);
+        Debug.Log ("link transfer callback! ::: ");//+ json_message);
     }
 
 
