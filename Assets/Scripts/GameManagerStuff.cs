@@ -3,93 +3,109 @@ using System.Collections;
 using System.Collections.Generic;
 
 
+// Example usage of network code
+//
 public class GameManagerStuff : MonoBehaviour
 {
-    // TODO example creating object.. getting id, and it going out to everyone
-    // since this will have to happen for all clients on join to keep ids in sync
-    // and send all objects to a new player. and track players on server
-    // a player can modify own objects only.
+    // Object list held by server, and sent to clients when requested.
+    //
+    public List<GameObject> game_objects;
+    public List<GamePlayer> players;
 
-    void Start ()
+
+
+    // GAME GUI /////////////////////////
+    //
+    void OnGUI ()
     {
-        // Lets register with the network to handle game events.
+        // Status indicators
         //
+        if (Network.isClient) { GUILayout.Label ("Connected as Client."); };
+        if (Network.isServer) { GUILayout.Label ("Hosting as Server.");   };
 
-        // Event from basic server.
-        PurpleNetwork.AddListener ("AddPlayer",    add_player_callback);
-
-        // User created event with link transfer message
-        PurpleNetwork.AddListener ("LinkTransfer", link_transfer_callback);
-
-        // User created event with no arguments and a second listener
-        PurpleNetwork.AddListener ("Ping", ping_callback);
-        PurpleNetwork.AddListener ("Ping", ping_two_callback);
-
-        // TODO listen only on server for 'request game state' which will be in charge of sending commands directly  to one player
+        if (GUILayout.Button ("Host"   )) { host_game (); }
+        if (GUILayout.Button ("Connect")) { connect ();   }
     }
 
 
 
+    // SETUP CLIENT OR SERVER ////////////
+    //
+    void host_game ()
+    {
+      PurpleNetwork.LaunchServer ();
+
+      // Server listeners
+      PurpleNetwork.AddListener<BuildRequestMessage>  ("BuildRequest",    build_request_callback);
+
+      // Local player needs events too
+      client_events ();
+    }
+
+
+    void connect ()
+    {
+      PurpleNetwork.ConnectTo ("127.0.0.1");
+      client_events ();
+    }
+
+
+    void client_events ()
+    {
+      // Client listeners
+      PurpleNetwork.AddListener<ConnectedToServer>   ("ConnectedToServer",  connected_to_server_callback);
+      PurpleNetwork.AddListener<PlayerMessage>       ("AddPlayer",          add_player_callback);
+      PurpleNetwork.AddListener<BuildRequestError>   ("BuildRequestError",  build_error_callback);
+      PurpleNetwork.AddListener<PlayerBuildsMessage> ("PlayerBuildsObject", player_builds_object_callback);
+    }
+
+
+
+    // GAME LOGIC ////////////////////////
+    //
     void Update ()
     {
-        // Lets send a game event.
-        //
         if (Input.GetButtonDown("Fire2"))
         {
-            LinkTransferMessage link_transfer_message = new LinkTransferMessage();
+            BuildRequestMessage build_request = new BuildRequestMessage();
+            build_request.type = "Factory"; build_request.x = 5; build_request.y = 10;
 
-            link_transfer_message.first_id  = 25;
-            link_transfer_message.second_id = 32;
-            link_transfer_message.link_type = "superduper";
-
-            PurpleNetwork.Broadcast ("LinkTransfer", link_transfer_message);
-        }
-
-        if (Input.GetButtonDown("Fire3"))
-        {
-            PurpleNetwork.Broadcast ("Ping", new EmptyMessage());
+            PurpleNetwork.ToServer ("BuildRequest", build_request);
         }
     }
 
 
-    // Game specific methods
+
+    // Game specific methods for Server
+    //
+    void build_request_callback(object build_request)
+    {
+      Debug.Log("YOU WANNA BUILD");
+    }
+
+    void player_connected_callback(object player_connected)
+    {
+    }
+
+
+    // Game specific methods for Client
     //
 
-    void add_player_callback(string json_message) // FIXME player message argument next
+    // request game state and register name on connect
+
+    void connected_to_server_callback (object connected_to_server)
     {
-        Debug.Log ("player callback!");
     }
 
-
-    void link_transfer_callback(string json_message) // TODO GET JSON
+    void add_player_callback (object player)
     {
-        Debug.Log ("link transfer callback! ::: "+ json_message);
     }
 
-
-    void ping_callback(string json_message)
+    void build_error_callback (object build_request_error)
     {
-        Debug.Log ("ping callback!");
     }
 
-    void ping_two_callback(string json_message)
+    void player_builds_object_callback (object player_builds)
     {
-        Debug.Log ("the other ping callback!");
     }
-}
-
-
-
-// GAME NETWORK MESSAGES
-//
-public class LinkTransferMessage
-{
-    public int    first_id;
-    public int    second_id;
-    public string link_type;
-}
-
-
-public class EmptyMessage
-{
 }

@@ -190,3 +190,4 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 422dea3bb74d745dfac28e588ff805b7, type: 3}
   m_Name: 
+  game_objects: []

@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using LitJson;
@@ -11,16 +12,8 @@ public class PurpleNetwork : MonoBehaviour
     public NetworkViewID last_view_id;
 
     private Dictionary<string, PurpleNetCallback> event_listeners = new Dictionary<string, PurpleNetCallback>();
+    private Dictionary<string, Type> callback_types = new Dictionary<string, Type>();
 
-    // TODO Server Listeners? (or just if(server))
-    // TODO Direct Responders
-    // TODO broadcast player connects and disconnects to others so they may request info.
-    // TODO send directly to server
-    //
-    // FIXME probably reduce to one listen/broadcast (vs server special) and just have if conditions in game manager that chose to listen or broadcast based on hosting/client
-
-    // LEFT AT: figuring out how to subscribe to both kinds of messages (with/without args)
-    // adding realistic connect/add/reconnect/etc
 
     void Start ()
     {
@@ -29,25 +22,9 @@ public class PurpleNetwork : MonoBehaviour
 
 
 
-    // DEBUG GUI /////////////////////////
-    //
-    void OnGUI ()
-    {
-        if (GUILayout.Button ("Host"   )) { launch_server ();         }
-        if (GUILayout.Button ("Connect")) { connect_to ("127.0.0.1"); }
-        if (Network.isClient) { GUILayout.Label ("Connected as Client."); };
-        if (Network.isServer) { GUILayout.Label ("Hosting as Server.");   };
-
-        if (GUILayout.Button ("New ID")) { last_view_id = Network.AllocateViewID (); }
-
-        GUILayout.Label ("View: " + last_view_id.ToString() );
-    }
-
-
-
     // SINGLETON /////////////////////////
     //
-    private static NetworkView network_view;
+    private static NetworkView   network_view;
     private static PurpleNetwork instance;
     public  static PurpleNetwork Instance
     {
@@ -63,13 +40,16 @@ public class PurpleNetwork : MonoBehaviour
         }
     }
 
+    private void wakie() { /* just get our instance up*/ }
+
 
 
     // SERVER ////////////////////////////
     //
     public void launch_server()
     {
-        Debug.Log ("Launching Server");
+        Instance.wakie ();
+
         Network.incomingPassword = password;
         bool use_nat = !Network.HavePublicAddress();
         Network.InitializeServer (number_of_players, port_number, use_nat);
@@ -77,9 +57,9 @@ public class PurpleNetwork : MonoBehaviour
 
 
     // SERVER EVENTS
-    void OnServerInitialized()  { Debug.Log ("Server Initialized."); }
-    void OnPlayerDisconnected() { Debug.Log ("Player Disconnected"); }
-    void OnPlayerConnected()    { Debug.Log ("Player Connected");    }
+    void OnServerInitialized()                      { OnConnectedToServer(); /* For local client */ }
+    void OnPlayerDisconnected(NetworkPlayer player) {  }
+    void OnPlayerConnected(NetworkPlayer player)    {  } // We dont really care, since the player will register themselves with the game
 
 
 
@@ -87,23 +67,21 @@ public class PurpleNetwork : MonoBehaviour
     //
     public void connect_to(string server_host)
     {
+        Instance.wakie ();
         Network.Connect(server_host, port_number, password);
-        Debug.Log ("Connecting to Server");
     }
 
 
     // CLIENT EVENTS
-    void OnConnectedToServer()      { Debug.Log ("Connected to server");      }
-    void OnDisconnectedFromServer() { Debug.Log ("Disconnected from server"); }
+    void OnConnectedToServer()      { /* TODO trigger local I'm connected events */}
+    void OnDisconnectedFromServer() { }
 
 
 
     // EVENT DISPATCH ////////////////////
     //
-    private void add_listener (string event_name, PurpleNetCallback listener)
+    private void add_listener <T> (string event_name, PurpleNetCallback listener)
     {
-        Debug.Log ("ADD LISTENER " + event_name);
-
         if (!event_listeners.ContainsKey (event_name))
         {
           event_listeners.Add(event_name, null);
@@ -117,28 +95,40 @@ public class PurpleNetwork : MonoBehaviour
     // SEND
     private void broadcast (string event_name, object message)
     {
-        Debug.Log ("BROADCAST " + event_name);
+        string json_message = JsonMapper.ToJson(message);
+        network_view.RPC("receive_event_message", RPCMode.All, event_name, json_message);
+    }
 
-        network_view.RPC("receive_broadcast", RPCMode.All, event_name, JsonMapper.ToJson(message));
+    private void to_server (string event_name, object message)
+    {
+        string json_message = JsonMapper.ToJson(message);
+
+        if (Network.isServer)
+        {
+          receive_event_message(event_name, json_message, new NetworkMessageInfo());
+        }
+        else
+        {
+          network_view.RPC("receive_event_message", RPCMode.Server, event_name, json_message);
+        }
     }
 
 
 
     // RECEIVE
     [RPC]
-    void receive_broadcast(string event_name, string json_message, NetworkMessageInfo info)
+    void receive_event_message(string event_name, string json_message, NetworkMessageInfo info)
     {
-        // TODO use <T> to induce object its coming back as instead of making function use the mapper?
         event_listeners[event_name](json_message);
     }
 
 
 
-    // SINGLETON STATIC METHODS ///////////
+    // CLASS SINGLETON METHODS ///////////
     //
-    public static void AddListener (string event_name, PurpleNetCallback listener)
+    public static void AddListener<T> (string event_name, PurpleNetCallback listener)
     {
-        Instance.add_listener (event_name, listener);
+        Instance.add_listener<T> (event_name, listener);
     }
 
 
@@ -147,11 +137,39 @@ public class PurpleNetwork : MonoBehaviour
         Instance.broadcast (event_name, message);
     }
 
+    public static void ToServer (string event_name, object message)
+    {
+        Instance.to_server (event_name, message);
+    }
+
+
+    public static void LaunchServer ()
+    {
+      Instance.launch_server ();
+    }
+
+
+    public static void ConnectTo (string host)
+    {
+      Instance.connect_to (host);
+    }
+
 }
 
 
 
 // DELEGATES FOR CALLBACK
 
-public delegate void PurpleNetCallback(string json_message); // Without message
-// public delegate void PurpleNetCallback<T>(T arg1); // With message
+public delegate void PurpleNetCallback(object converted_object); // With message
+
+
+
+// MESSAGE CLASSES
+public class PurpleMessage
+{
+  NetworkMessageInfo message_info;
+}
+
+public class EmptyMessage : PurpleMessage
+{
+}
